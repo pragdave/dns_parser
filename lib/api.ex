@@ -9,7 +9,7 @@ defmodule DnsPackets do
   
   """
 
-  @spec decode(binary) :: Packet.t 
-  defdelegate decode(dns_data), to: Packet, as: :decode_packet
+  @spec decode(binary) :: DnsPackets.Packets.t 
+  defdelegate decode(dns_data), to: DnsPackets.Packets, as: :decode_packet
 
 end

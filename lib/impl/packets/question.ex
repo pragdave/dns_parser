@@ -1,16 +1,14 @@
 defmodule DnsPackets.Packets.Question do
   alias DnsPackets.PacketBuilder.Section, as: PBS
 
-  defstruct [ :name, :qtype, :qclass, :raw,  ]
-  @type t :: %__MODULE__{name: String.t, qtype: Packet.T.t, qclass: Packet.C.t, raw: binary }
+  defstruct [ :name, :qtype, :qclass  ]
+  @type t :: %__MODULE__{name: String.t, qtype: Packet.T.t, qclass: Packet.C.t }
 
-  def decode(context = { start_rest, start_offset, _}) do
+  def decode(context) do
     { name, {rest, offset, segments} } = DnsPackets.Packets.Names.decode_name(context)
     << qtype :: 16, qclass :: 16, rest :: binary >> = rest
     offset = offset + 4
-    raw_len = offset - start_offset
-    << raw :: binary-size(raw_len), _ :: binary >> = start_rest
-    result = %__MODULE__{ name: name, qtype: qtype, qclass: qclass, raw: raw }
+    result = %__MODULE__{ name: name, qtype: qtype, qclass: qclass }
     { result, { rest, offset, segments }}
   end
 

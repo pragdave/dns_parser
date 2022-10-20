@@ -1,5 +1,5 @@
 defmodule DnsPackets.PacketBuilder.Section do
-  use Bitwise
+  import Bitwise
 
   defstruct [ :segments, :content, :base_offset, :offset]
   @type t :: %__MODULE__{ segments: Map.t, content: [ binary ], base_offset: integer, offset: integer }
@@ -62,7 +62,7 @@ defmodule DnsPackets.PacketBuilder.Section do
           offset: section.offset + len + 1 }
 
       # don't compress a name in same section (like a.b.a) because
-      # "a" will decompress to "a.b.a"
+      # "a" will decompress to "a.b"
       pointer when pointer >= section.base_offset ->
         len = byte_size(string)
         encoded = << len :: 8, string :: binary >>
@@ -75,9 +75,17 @@ defmodule DnsPackets.PacketBuilder.Section do
     end
   end
 
+  defp add_segment(string, offset, segments) do
+    segments 
+    |> Map.put(string, << (offset) ||| 0xc0 :: 16 >>)
+  end
+
   defp add_terminator(section) do
     %{
-      section | offset: section.offset + 1, content: [ << 0 :: 8 >> | section.content] 
+      section |
+      offset: section.offset + 1, 
+      content: [ << 0 :: 8 >> | section.content],
+      segments: add_segment("", section.offset, section.segments)
     }
   end
 end

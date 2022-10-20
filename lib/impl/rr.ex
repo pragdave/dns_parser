@@ -73,7 +73,7 @@ defmodule DnsPackets.RR do
           RData.Name.format(rdata.nxtname),
           RData.BMap.format(rdata.bmap),
       ]
-      33 -> [ "svr", 
+      33 -> [ "srv", 
           RData.Int16.format(rdata.priority), 
           RData.Int16.format(rdata.weight), 
           RData.Int16.format(rdata.port), 

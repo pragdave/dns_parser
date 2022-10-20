@@ -19,8 +19,6 @@ defmodule DnsPacketsTest do
     0x00, 0x04, 0x9b, 0x21, 0x11, 0x44, 
     >>
 
-  defp no_raw(s), do: Map.put(s, :raw, nil)
-
   test "Basic A response" do
     r = DnsPackets.Packets.decode_packet(@nwu)
 
@@ -40,13 +38,14 @@ defmodule DnsPacketsTest do
 
     assert length(r.questions) == 1
     q = hd r.questions
-    assert no_raw(q) == %Question{name: "www.northeastern.edu", qclass: 1, qtype: 1}
+    assert q == %Question{name: "www.northeastern.edu", qclass: 1, qtype: 1}
 
     assert length(r.answers)== 1
     a = hd r.answers
-    assert no_raw(a) == %Answer{
+    assert a == %Answer{
       name: "www.northeastern.edu", aclass: 1, atype: 1,
       ttl: 600,
+      ttl_epoch: 1000,
       flush_cache: false,
       rdata: %RR.A{a: { 155, 33, 17, 68 }}
     }

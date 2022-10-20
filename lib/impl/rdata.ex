@@ -1,5 +1,4 @@
 defmodule DnsPackets.RData do
-  use Bitwise
   alias DnsPackets.PacketBuilder.Section, as: PBS
   alias DnsPackets.Packets.Names
 

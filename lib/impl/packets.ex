@@ -1,6 +1,5 @@
 defmodule DnsPackets.Packets do
 
-  use Bitwise
 
   @type t :: %__MODULE__{
     header:      Header.t,
@@ -69,17 +68,17 @@ defmodule DnsPackets.Packets do
   
   @spec decode_answers(parse_context, integer) :: { [Answer.t], parse_context }
   def decode_answers(context, count) do
-    decode_answers(context, count, [])
+    do_decode_answers(context, count, [])
   end
 
-  @spec decode_answers(parse_context, integer, [ Answer.t ]) :: { [ Answer.t ], parse_context }
-  def decode_answers(context, _count=0, result) do
+  @spec do_decode_answers(parse_context, integer, [ Answer.t ]) :: { [ Answer.t ], parse_context }
+  def do_decode_answers(context, _count=0, result) do
     { result |> Enum.reverse, context}
   end
 
-  def decode_answers(context, count, result) do
+  def do_decode_answers(context, count, result) do
     { answer, context } = DnsPackets.Packets.Answer.decode(context)
-    decode_answers(context, count-1, [ answer | result ])
+    do_decode_answers(context, count-1, [ answer | result ])
   end
 
 

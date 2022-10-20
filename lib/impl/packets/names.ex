@@ -37,7 +37,7 @@ defmodule DnsPackets.Packets.Names do
   def read_name_from_segments(offset, segments) do
     case Map.get(segments, offset, nil) do
       nil ->
-        IO.puts "No segment at #{offset} in #{inspect segments}"
+        # IO.puts "No segment at #{offset} in #{inspect segments}"
         [""]
       "" ->
         [""]  # end of list
