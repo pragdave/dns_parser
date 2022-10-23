@@ -5,19 +5,25 @@ defmodule DnsPackets.Packets.Answer do
   import Bitwise
   require Logger
 
-  defstruct [ :name, :atype, :aclass, :flush_cache, :ttl, :ttl_epoch, :rdata ]
+  use TypedStruct
 
-  @type t :: %__MODULE__{
-    name: String.t, atype: Packet.T.t, aclass: Packet.C.t,
-    flush_cache: boolean, ttl: integer(), ttl_epoch: integer(), rdata: binary, 
-  }
+  typedstruct do
+    field :name,        String.t     # the name of this resource
+    field :atype,       RR.rr_type_numbers   # the (integer) packet type (A = 1, etc)
+    field :aclass,      Packets.C.t   # the protocol class (always 1)
+    field :flush_cache, boolean      # this data replaces existing data
+    field :ttl,         integer()    # the time-to-live (see below)
+    field :ttl_epoch,   integer()    # ...
+    field :rdata,       RR.rr_type_names  # the resource type specific data
+  end
+
 
   def create(options) do
     struct(__MODULE__, options)
   end
 
   def decode(context) do
-    { name, {rest, offset, segments} } = Packets.Names.decode_name(context)
+    { name, {rest, offset, original} } = Packets.Names.decode_name(context)
 
     << 
       atype :: 16, 
@@ -31,7 +37,7 @@ defmodule DnsPackets.Packets.Answer do
     aclass = aclass &&& 0x7fff 
 
     try do
-      { rdata, context, _length_left } = decode_and_verify_length(rest, offset+10, segments, atype, rdlength)
+      { rdata, context, _length_left } = decode_and_verify_length(rest, offset+10, original, atype, rdlength)
       # { _, offset, _} = context
       # raw_len = offset - start_offset
       # << raw :: binary-size(raw_len), _ :: binary >> = start_rest
@@ -82,8 +88,8 @@ defmodule DnsPackets.Packets.Answer do
      answer.atype == type && answer.name == name 
   end
 
-  def decode_and_verify_length(rest, offset, segments, atype, rdlength) do 
-    result = { rdata, _context, length_left } = RR.decode({ rest, offset+10, segments }, atype, rdlength)
+  def decode_and_verify_length(rest, offset, original, atype, rdlength) do 
+    result = { rdata, _context, length_left } = RR.decode({ rest, offset+10, original }, atype, rdlength)
     if length_left != 0 do
       Logger.error("RR.decode failed to read correct length.")
       Logger.error("#{length_left} bytes remaining")

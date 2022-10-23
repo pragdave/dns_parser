@@ -1,5 +1,6 @@
 defmodule DnsPackets.RData do
   alias DnsPackets.PacketBuilder.Section, as: PBS
+  alias DnsPackets.Packets
   alias DnsPackets.Packets.Names
 
   defmodule DecodeEncode do
@@ -14,9 +15,9 @@ defmodule DnsPackets.RData do
   defmodule BMap do
     @behaviour DecodeEncode
 
-    def decode({rest, offset, segments}, length_left) do 
+    def decode({rest, offset, original}, length_left) do 
       << bmap :: binary-size(length_left), rest :: binary >> = rest
-      { bmap, { rest, offset+length_left, segments}, 0}
+      { bmap, { rest, offset+length_left, original}, 0}
     end
 
     def encode_into_section(section,  val) do
@@ -31,9 +32,9 @@ defmodule DnsPackets.RData do
   defmodule Int16 do
     @behaviour DecodeEncode
 
-    def decode({ rest, offset, segments }, length_left) do
+    def decode({ rest, offset, original }, length_left) do
       << val :: 16, rest :: binary >> = rest
-      { val, { rest, offset+2, segments }, length_left-2 }
+      { val, { rest, offset+2, original }, length_left-2 }
     end
 
     def encode_into_section(section, val) do
@@ -49,9 +50,9 @@ defmodule DnsPackets.RData do
   defmodule IPV4_Address do
     @behaviour DecodeEncode
 
-    def decode({ rest, offset, segments }, length_left) do
+    def decode({ rest, offset, original }, length_left) do
       << a::8, b::8, c::8, d::8, rest :: binary >> = rest
-      { {a,b,c,d}, { rest, offset+4, segments }, length_left-4 }
+      { {a,b,c,d}, { rest, offset+4, original }, length_left-4 }
     end
 
     def encode_into_section(section, {a,b,c,d})  do
@@ -66,9 +67,9 @@ defmodule DnsPackets.RData do
   defmodule IPV6_Address do
     @behaviour DecodeEncode
 
-    def decode({ rest, offset, segments }, length_left) do
+    def decode({ rest, offset, original }, length_left) do
       << addr :: binary-size(16), rest :: binary >> = rest
-      { addr, { rest, offset+16, segments }, length_left-16 }
+      { addr, { rest, offset+16, original }, length_left-16 }
     end
 
     def encode_into_section(section, addr) do
@@ -104,10 +105,10 @@ defmodule DnsPackets.RData do
       { Enum.reverse(result), context, 0 }
     end
 
-    defp decode_kv_list({rest, offset, segments}, length_left, result) do
+    defp decode_kv_list({rest, offset, original}, length_left, result) do
       << option_code::16, len::16, data::binary-size(len), rest :: binary >> = rest
       decode_kv_list(
-        { rest, offset + 4 + len, segments },
+        { rest, offset + 4 + len, original },
         length_left - len - 4,
         [ { option_code, data} | result ]
       )
@@ -118,8 +119,8 @@ defmodule DnsPackets.RData do
     @behaviour DecodeEncode
 
     def decode({_, offset1, _} = context, length_left) do 
-      { name, {rest, offset2, segments} } = Names.decode_name(context)
-      { name, {rest, offset2, segments }, length_left - (offset2 - offset1) }
+      { name, {rest, offset2, original} } = Names.decode_name(context)
+      { name, {rest, offset2, original }, length_left - (offset2 - offset1) }
     end
 
     def encode_into_section(section, name) do
@@ -134,9 +135,9 @@ defmodule DnsPackets.RData do
   defmodule Raw do
     @behaviour DecodeEncode
 
-    def decode({rest, offset, segments}, length_left) do
+    def decode({rest, offset, original}, length_left) do
       << bin :: binary-size(length_left), rest :: binary >> = rest
-      { bin, { rest, offset + length_left, segments}, 0 }
+      { bin, { rest, offset + length_left, original}, 0 }
     end
 
     def encode_into_section(section, binary) do
@@ -151,9 +152,9 @@ defmodule DnsPackets.RData do
   defmodule String do
     @behaviour DecodeEncode
 
-    def decode({rest, offset, segments}, length_left) do
+    def decode({rest, offset, original}, length_left) do
       << len :: 8, str :: binary-size(len), rest :: binary >> = rest
-      { str, { rest, offset + len + 1, segments}, length_left - len - 1}
+      { str, { rest, offset + len + 1, original}, length_left - len - 1}
     end
 
     def encode_into_section(section, string) do
@@ -181,7 +182,7 @@ defmodule DnsPackets.RData do
       val |> Enum.map(&inspect/1) |> Enum.join("\n")
     end
 
-    @spec decode_list_of_strings(Packets.parse_context, number, [String.t]) :: { Packets.parse_context, number, [ String.t]}
+    @spec decode_list_of_strings(Packets.parse_context, number, [Elixir.String.t]) :: { Packets.parse_context, number, [ Elixir.String.t ]}
     def decode_list_of_strings(_context, length_left, _result) when length_left < 0 do
       raise "Overshot list of strings"
     end
@@ -190,11 +191,11 @@ defmodule DnsPackets.RData do
       { context, 0, Enum.reverse(result) }
     end
 
-    def decode_list_of_strings({rest, offset, segments}, length_left, result) do
+    def decode_list_of_strings({rest, offset, original}, length_left, result) do
       << len :: 8, str :: binary-size(len), rest :: binary >> = rest
       len = len + 1
       decode_list_of_strings(
-        { rest, offset + len, segments}, 
+        { rest, offset + len, original}, 
         length_left - len, 
         [ str | result ]
       )

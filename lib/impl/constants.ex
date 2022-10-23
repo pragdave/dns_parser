@@ -1,4 +1,4 @@
-defmodule DNSPackets.Packets.Opcode do
+defmodule DnsPackets.Packets.Opcode do
   @compile {:inline, query: 0, iquery: 0, status: 0, updatea: 0, updated: 0}
   @compile {:inline, updateda: 0, updatem: 0, updatema: 0, zoneinit: 0, zoneref: 0}
 
@@ -28,7 +28,7 @@ end
 #
 # Currently defined response codes
 #
-defmodule DNSPackets.Packets.RC do
+defmodule DnsPackets.Packets.RC do
   @compile {:inline, noerror: 0, formerr: 0, servfail: 0, nxdomain: 0, notimp: 0}
   @compile {:inline, refused: 0, nochange: 0, badvers: 0}
 

@@ -58,7 +58,7 @@ defmodule DnsPackets.RR do
   rr(:caa,    257, "certification authority authorization", rdata: RData.Raw)
     
 
-  # def decode({ rest, offset, segments }, type, length) do
+  # def decode({ rest, offset, original }, type, length) do
   #   raise "\n\nDon't know how to decode type #{type} (length #{length})\n\n"
   # end
 

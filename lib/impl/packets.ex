@@ -1,5 +1,6 @@
 defmodule DnsPackets.Packets do
 
+  alias DnsPackets.Packets.{ Header, Answer, Question }
 
   @type t :: %__MODULE__{
     header:      Header.t,
@@ -12,11 +13,11 @@ defmodule DnsPackets.Packets do
   defstruct [ :header, :questions, :answers, :authorities, :additional ]
 
 
-  @type parse_context :: { rest :: binary, offset :: integer(), segments :: Map.t  }
+  @type parse_context :: { rest :: binary, offset :: integer(), original :: binary  }
 
   @spec decode_packet(binary) :: t
   def decode_packet(rest) do
-    context = { rest, 0, Map.new() }
+    context = { rest, 0, rest }
     { header,      context }  = decode_header(context)
     { questions,   context }  = decode_questions(context, header.qd_count)
     { answers,     context }  = decode_answers(context, header.an_count)
@@ -37,9 +38,9 @@ defmodule DnsPackets.Packets do
   end
 
   @spec decode_header(parse_context) :: { Header.t, parse_context }
-  def decode_header({ rest, offset, segments }) do
+  def decode_header({ rest, offset, original }) do
     { header, rest } = DnsPackets.Packets.Header.from_binary(rest)
-    { header, { rest, offset+12, segments } }
+    { header, { rest, offset+12, original } }
   end
 
 
@@ -52,8 +53,8 @@ defmodule DnsPackets.Packets do
     decode_questions(context, count, [])
   end
 
-  def decode_questions({rest, offset, segments}, _count=0, result) do
-    { result |> Enum.reverse, { rest, offset, segments }}
+  def decode_questions({rest, offset, original}, _count=0, result) do
+    { result |> Enum.reverse, { rest, offset, original }}
   end
 
   def decode_questions(context, count, result) do

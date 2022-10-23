@@ -10,10 +10,15 @@ defmodule DnsPackets.RRHelpers do
     end
 
     defmacro __before_compile__(env) do
+      type_numbers = Module.get_attribute(env.module, :rr_names, [])
+        |> Enum.map(&elem(&1, 0))
+        |> type_union()  
       type_names = Module.get_attribute(env.module, :rr_names, [])
+        |> Enum.map(&elem(&1, 1))
         |> type_union()  
       quote do 
-        @type rr_types :: unquote(type_names)
+        @type rr_type_numbers :: unquote(type_numbers)
+        @type rr_type_names   :: unquote(type_names)
       end
     end
   end
@@ -51,7 +56,7 @@ defmodule DnsPackets.RRHelpers do
         { :compile, inline: [ type: 0 ] }
         def type, do: unquote(type)
 
-        @spec decode(Packets.parse_context, integer) :: { %__MODULE__{}, Packets.parse_context, integer}
+        @spec decode(DnsPackets.Packets.parse_context, integer) :: { %__MODULE__{}, DnsPackets.Packets.parse_context, integer}
         def decode(context, length) do
           { setters, context, length_left } = 
             unquote(content) 
@@ -82,7 +87,7 @@ defmodule DnsPackets.RRHelpers do
         end
       end
 
-      @spec decode(Packets.parse_context, unquote(type), integer) :: { %unquote(modname){}, Packets.parse_context, integer}
+      @spec decode(DnsPackets.Packets.parse_context, unquote(type), integer) :: { %unquote(modname){}, DnsPackets.Packets.parse_context, integer}
       def decode(context, unquote(type), length) do
         unquote(modname).decode(context, length)
       end
@@ -91,7 +96,7 @@ defmodule DnsPackets.RRHelpers do
         unquote(modname).encode_into_section(section, answer.rdata)
       end
 
-      Module.put_attribute(__MODULE__, :rr_names, unquote(modname))
+      Module.put_attribute(__MODULE__, :rr_names, { unquote(type), unquote(modname)})
     end)
     # IO.puts(Macro.to_string(code))
     code

@@ -1,11 +1,12 @@
 defmodule DnsPackets.PacketBuilder do
-  defstruct [ :sections, :offset, :segments, :now ]
+  defstruct [ :sections, :offset, :original, :now ]
   alias DnsPackets.PacketBuilder.Section, as: PBS
   alias DnsPackets.Packets.{ Answer, Question, Header }
+
   @type t :: %__MODULE__{
-    sections: Map.t,    # section kind -> [ section entries ]
+    sections: %{ section_kind => list(binary) },
     offset: integer,
-    segments: Map.t,    # name -> offset
+    original: %{ String.t => integer},    # name -> offset
     now: integer
   }
   @type builder_context :: { t, binary }
@@ -17,14 +18,14 @@ defmodule DnsPackets.PacketBuilder do
     %__MODULE__{
       sections: Map.new(question: [], answer: [], authoritative: [], additional: []),
       offset:   12, # sizeof header
-      segments: Map.new(),
+      original: Map.new(),
       now:      DnsPackets.MyTime.now()
     }
   end
 
   @spec new_section(t) :: PBS.t
   def new_section(builder) do
-    %PBS{ content: [], segments: builder.segments, base_offset: builder.offset, offset: 0}
+    %PBS{ content: [], original: builder.original, base_offset: builder.offset, offset: 0}
   end
 
   @spec add_question(t, String.t, integer) :: t
@@ -37,7 +38,7 @@ defmodule DnsPackets.PacketBuilder do
       builder | 
       sections: Map.put(builder.sections, :question, new_list),
       offset: builder.offset + byte_size(bin),
-      segments: section.segments
+      original: section.original
     }  
   end
 
@@ -47,11 +48,11 @@ defmodule DnsPackets.PacketBuilder do
     section = Answer.encode_into_section(section, answer)
     bin = PBS.to_binary(section)
     new_list = [ bin | builder.sections[section_kind] ] 
-    %{
+    %__MODULE__{
       builder | 
       sections: Map.put(builder.sections, section_kind, new_list),
       offset: builder.offset + byte_size(bin),
-      segments: section.segments
+      original: section.original
     }  
   end
 

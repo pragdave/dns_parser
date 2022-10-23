@@ -1,8 +1,8 @@
 defmodule DnsPackets.PacketBuilder.Section do
   import Bitwise
 
-  defstruct [ :segments, :content, :base_offset, :offset]
-  @type t :: %__MODULE__{ segments: Map.t, content: [ binary ], base_offset: integer, offset: integer }
+  defstruct [ :original, :content, :base_offset, :offset]
+  @type t :: %__MODULE__{ original: %{ String.t => integer }, content: [ binary ], base_offset: integer, offset: integer }
 
   @spec remove_content(t) :: t
   def remove_content(section) do
@@ -46,18 +46,18 @@ defmodule DnsPackets.PacketBuilder.Section do
   end
 
   defp add_string_fragment(section, string) do
-    segments = section.segments
+    original = section.original
 
-    case Map.get(segments, string) do
+    case Map.get(original, string) do
       nil ->
-        segments = 
-          segments 
+        original = 
+          original 
           |> Map.put(string, << (section.base_offset + section.offset) ||| 0xc0 :: 16 >>)
 
         len = byte_size(string)
         encoded = << len :: 8, string :: binary >>
         %{ section 
-          | segments: segments, 
+          | original: original, 
           content: [ encoded | section.content ], 
           offset: section.offset + len + 1 }
 
@@ -75,8 +75,8 @@ defmodule DnsPackets.PacketBuilder.Section do
     end
   end
 
-  defp add_segment(string, offset, segments) do
-    segments 
+  defp add_segment(string, offset, original) do
+    original 
     |> Map.put(string, << (offset) ||| 0xc0 :: 16 >>)
   end
 
@@ -85,7 +85,7 @@ defmodule DnsPackets.PacketBuilder.Section do
       section |
       offset: section.offset + 1, 
       content: [ << 0 :: 8 >> | section.content],
-      segments: add_segment("", section.offset, section.segments)
+      original: add_segment("", section.offset, section.original)
     }
   end
 end

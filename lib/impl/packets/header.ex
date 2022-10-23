@@ -1,4 +1,5 @@
 defmodule DnsPackets.Packets.Header do
+  alias DnsPackets.Packets
 
   defstruct [
    :id, :qr, :opcode, :aa, :tc, :rd, :ra, :pr, :rcode,
@@ -9,13 +10,13 @@ defmodule DnsPackets.Packets.Header do
   @type t :: %__MODULE__{ 
     id: integer(),
     qr: :query | :reply,
-    opcode: Packer.Opcode.t,
+    opcode: Packets.Opcode.t,
     aa: boolean,
     tc: boolean,
     rd: boolean,
     ra: boolean,
     pr: boolean,
-    rcode: Packet.RC.t,
+    rcode: Packets.RC.t,
     qd_count: integer(),
     an_count: integer(),
     ns_count: integer(),
